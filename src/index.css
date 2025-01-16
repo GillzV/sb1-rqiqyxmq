@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.custom-marker {
+  background: none;
+  border: none;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+}
+
+.leaflet-container {
+  font: inherit;
+}
+
+.direction-marker-container {
+  background: none;
+  border: none;
+}
+
+.direction-marker {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.direction-marker .arrow {
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 24px solid rgb(79, 70, 229);
+  transform-origin: center 75%;
+}
