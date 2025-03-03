@@ -11,6 +11,7 @@ interface AddLocationModalProps {
 }
 
 export interface LocationData {
+  id?: string;
   title: string;
   description: string;
   photoUrl: string;

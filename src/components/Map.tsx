@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
-import { Camera, Navigation } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import { Camera, Navigation, Trash2 } from 'lucide-react';
 import L from 'leaflet';
 import AddLocationModal from './AddLocationModal';
 import type { LocationData } from './AddLocationModal';
+import { useLocations } from '../contexts/LocationContext';
 
 // Create a custom icon using Lucide React Camera icon
 const createCustomIcon = () => {
@@ -32,10 +33,27 @@ const MapClickHandler: React.FC<MapClickHandlerProps> = ({ onMapClick }) => {
   return null;
 };
 
-const MapComponent = () => {
-  const [locations, setLocations] = useState<LocationData[]>([]);
+// New component to handle map panning
+const MapController: React.FC = () => {
+  const map = useMap();
+  const { selectedLocationId, locations } = useLocations();
+
+  useEffect(() => {
+    if (selectedLocationId) {
+      const location = locations.find((loc: LocationData) => loc.id === selectedLocationId);
+      if (location) {
+        map.setView(location.position, 16);
+      }
+    }
+  }, [selectedLocationId, locations, map]);
+
+  return null;
+};
+
+const MapComponent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<[number, number]>([37.8, -122.4]);
+  const { locations, addLocation, deleteLocation } = useLocations();
   const customIcon = createCustomIcon();
 
   const handleMapClick = useCallback((position: [number, number]) => {
@@ -43,8 +61,14 @@ const MapComponent = () => {
     setIsModalOpen(true);
   }, []);
 
-  const handleSaveLocation = (locationData: LocationData) => {
-    setLocations(prev => [...prev, locationData]);
+  const handleSaveLocation = async (locationData: LocationData) => {
+    if (locationData.photoFile) {
+      // In a real app, you would upload the file to a server here
+      // For now, we'll create a temporary URL
+      locationData.photoUrl = URL.createObjectURL(locationData.photoFile);
+    }
+    addLocation(locationData);
+    setIsModalOpen(false);
   };
 
   return (
@@ -60,9 +84,10 @@ const MapComponent = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapClickHandler onMapClick={handleMapClick} />
+        <MapController />
         
-        {locations.map((location, index) => (
-          <Marker key={index} position={location.position} icon={customIcon}>
+        {locations.map((location: LocationData) => (
+          <Marker key={location.id} position={location.position} icon={customIcon}>
             <Popup>
               <div className="p-2 min-w-[200px]">
                 <img
@@ -70,14 +95,22 @@ const MapComponent = () => {
                   alt={location.title}
                   className="w-full h-32 object-cover rounded-lg mb-2"
                 />
-                <h3 className="font-semibold mb-1">{location.title}</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">{location.title}</h3>
+                  <button
+                    onClick={() => location.id && deleteLocation(location.id)}
+                    className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
                 <p className="text-sm text-gray-600 mb-2">{location.description}</p>
                 <div className="flex items-center text-sm text-gray-500">
                   <Navigation className="h-4 w-4 mr-1" />
                   <span>{location.direction}°</span>
                 </div>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {location.tags.map((tag, i) => (
+                  {location.tags.map((tag: string, i: number) => (
                     <span
                       key={i}
                       className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full text-xs"

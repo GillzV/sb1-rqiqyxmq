@@ -1,8 +1,20 @@
 import React, { useState } from 'react';
-import { Camera, Heart, Bookmark, Star, ChevronRight } from 'lucide-react';
+import { Camera, Heart, Bookmark, Star, ChevronRight, Trash2 } from 'lucide-react';
+import { useLocations } from '../contexts/LocationContext';
+import type { LocationData } from './AddLocationModal';
 
-const Sidebar = () => {
+const Sidebar: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { locations, setSelectedLocationId, deleteLocation } = useLocations();
+
+  const handleLocationClick = (locationId: string) => {
+    setSelectedLocationId(locationId);
+  };
+
+  const handleDelete = (e: React.MouseEvent, locationId: string) => {
+    e.stopPropagation();
+    deleteLocation(locationId);
+  };
 
   return (
     <div className={`bg-white border-l border-gray-200 transition-all duration-300 ${isCollapsed ? 'w-12' : 'w-96'}`}>
@@ -18,17 +30,27 @@ const Sidebar = () => {
           <h2 className="text-lg font-semibold mb-4">Featured Locations</h2>
           
           <div className="space-y-4">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="border rounded-lg overflow-hidden">
+            {locations.map((location: LocationData) => (
+              <div
+                key={location.id}
+                className="border rounded-lg overflow-hidden cursor-pointer hover:border-indigo-500 transition-colors"
+                onClick={() => location.id && handleLocationClick(location.id)}
+              >
                 <img
-                  src={`https://source.unsplash.com/random/400x300?photography,landscape&sig=${item}`}
-                  alt="Location"
+                  src={location.photoUrl}
+                  alt={location.title}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium">Golden Gate Bridge Viewpoint</h3>
+                    <h3 className="font-medium">{location.title}</h3>
                     <div className="flex items-center space-x-2">
+                      <button 
+                        className="text-gray-600 hover:text-red-500"
+                        onClick={(e) => location.id && handleDelete(e, location.id)}
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
                       <button className="text-gray-600 hover:text-red-500">
                         <Heart className="h-5 w-5" />
                       </button>
@@ -39,7 +61,7 @@ const Sidebar = () => {
                   </div>
                   <div className="flex items-center text-sm text-gray-500 mb-2">
                     <Camera className="h-4 w-4 mr-1" />
-                    <span>Car Photography, Landscape</span>
+                    <span>{location.tags.join(', ')}</span>
                   </div>
                   <div className="flex items-center mb-2">
                     {[...Array(5)].map((_, i) => (
@@ -48,10 +70,10 @@ const Sidebar = () => {
                         className="h-4 w-4 text-yellow-400 fill-current"
                       />
                     ))}
-                    <span className="ml-1 text-sm text-gray-600">(24 reviews)</span>
+                    <span className="ml-1 text-sm text-gray-600">(New)</span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    Perfect spot for sunrise shots with the bridge in the background.
+                    {location.description}
                   </p>
                 </div>
               </div>
