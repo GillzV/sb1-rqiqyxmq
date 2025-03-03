@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Camera, Heart, Bookmark, Star, ChevronRight, Trash2 } from 'lucide-react';
 import { useLocations } from '../contexts/LocationContext';
+import { useSearch } from '../contexts/SearchContext';
 import type { LocationData } from './AddLocationModal';
 
 const Sidebar: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { locations, setSelectedLocationId, deleteLocation } = useLocations();
+  const { setSelectedLocationId, deleteLocation } = useLocations();
+  const { filteredLocations } = useSearch();
 
   const handleLocationClick = (locationId: string) => {
     setSelectedLocationId(locationId);
@@ -30,7 +32,7 @@ const Sidebar: React.FC = () => {
           <h2 className="text-lg font-semibold mb-4">Featured Locations</h2>
           
           <div className="space-y-4">
-            {locations.map((location: LocationData) => (
+            {filteredLocations.map((location: LocationData) => (
               <div
                 key={location.id}
                 className="border rounded-lg overflow-hidden cursor-pointer hover:border-indigo-500 transition-colors"

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { LocationData } from '../components/AddLocationModal';
 
 interface LocationContextType {
@@ -15,17 +15,32 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
 
-  const addLocation = (location: LocationData) => {
-    const newLocation = { ...location, id: crypto.randomUUID() };
-    setLocations(prev => [...prev, newLocation]);
-  };
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Locations state updated:', locations);
+  }, [locations]);
 
-  const deleteLocation = (locationId: string) => {
-    setLocations(prev => prev.filter(loc => loc.id !== locationId));
+  const addLocation = useCallback((location: LocationData) => {
+    console.log('Adding location:', location);
+    const newLocation = { ...location, id: crypto.randomUUID() };
+    setLocations(prev => {
+      const updated = [...prev, newLocation];
+      console.log('Updated locations:', updated);
+      return updated;
+    });
+  }, []);
+
+  const deleteLocation = useCallback((locationId: string) => {
+    console.log('Deleting location:', locationId);
+    setLocations(prev => {
+      const updated = prev.filter(loc => loc.id !== locationId);
+      console.log('Updated locations after delete:', updated);
+      return updated;
+    });
     if (selectedLocationId === locationId) {
       setSelectedLocationId(null);
     }
-  };
+  }, [selectedLocationId]);
 
   return (
     <LocationContext.Provider value={{ 

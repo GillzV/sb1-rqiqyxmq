@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Compass, Link, Upload } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -48,8 +48,15 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({ isOpen, onClose, po
     photoUrl: '',
     direction: 0,
     tags: [],
-    position,
+    position: position,
   });
+
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      position: position
+    }));
+  }, [position]);
 
   const [currentTag, setCurrentTag] = useState('');
   const [uploadType, setUploadType] = useState<'file' | 'url'>('file');
@@ -60,8 +67,8 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({ isOpen, onClose, po
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Submitting form data:', formData);
     onSave(formData);
-    onClose();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

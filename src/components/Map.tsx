@@ -56,19 +56,28 @@ const MapComponent: React.FC = () => {
   const { locations, addLocation, deleteLocation } = useLocations();
   const customIcon = createCustomIcon();
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Current locations:', locations);
+  }, [locations]);
+
   const handleMapClick = useCallback((position: [number, number]) => {
+    console.log('Map clicked at position:', position);
     setSelectedPosition(position);
     setIsModalOpen(true);
   }, []);
 
   const handleSaveLocation = async (locationData: LocationData) => {
-    if (locationData.photoFile) {
-      // In a real app, you would upload the file to a server here
-      // For now, we'll create a temporary URL
-      locationData.photoUrl = URL.createObjectURL(locationData.photoFile);
+    try {
+      if (locationData.photoFile) {
+        locationData.photoUrl = URL.createObjectURL(locationData.photoFile);
+      }
+      console.log('Saving location with position:', locationData.position);
+      await addLocation(locationData);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error saving location:', error);
     }
-    addLocation(locationData);
-    setIsModalOpen(false);
   };
 
   return (
@@ -86,43 +95,50 @@ const MapComponent: React.FC = () => {
         <MapClickHandler onMapClick={handleMapClick} />
         <MapController />
         
-        {locations.map((location: LocationData) => (
-          <Marker key={location.id} position={location.position} icon={customIcon}>
-            <Popup>
-              <div className="p-2 min-w-[200px]">
-                <img
-                  src={location.photoUrl}
-                  alt={location.title}
-                  className="w-full h-32 object-cover rounded-lg mb-2"
-                />
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">{location.title}</h3>
-                  <button
-                    onClick={() => location.id && deleteLocation(location.id)}
-                    className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">{location.description}</p>
-                <div className="flex items-center text-sm text-gray-500">
-                  <Navigation className="h-4 w-4 mr-1" />
-                  <span>{location.direction}°</span>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {location.tags.map((tag: string, i: number) => (
-                    <span
-                      key={i}
-                      className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full text-xs"
+        {Array.isArray(locations) && locations.map((location: LocationData) => {
+          console.log('Rendering marker for location:', location);
+          return (
+            <Marker 
+              key={location.id} 
+              position={location.position} 
+              icon={customIcon}
+            >
+              <Popup>
+                <div className="p-2 min-w-[200px]">
+                  <img
+                    src={location.photoUrl}
+                    alt={location.title}
+                    className="w-full h-32 object-cover rounded-lg mb-2"
+                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">{location.title}</h3>
+                    <button
+                      onClick={() => location.id && deleteLocation(location.id)}
+                      className="p-1 text-gray-500 hover:text-red-500 rounded-full hover:bg-red-50"
                     >
-                      {tag}
-                    </span>
-                  ))}
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{location.description}</p>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Navigation className="h-4 w-4 mr-1" />
+                    <span>{location.direction}°</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {location.tags.map((tag: string, i: number) => (
+                      <span
+                        key={i}
+                        className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full text-xs"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
 
       <AddLocationModal
