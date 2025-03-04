@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Compass, Link, Upload } from 'lucide-react';
+import { X, Camera, Compass, Link, Upload, MapPin, ExternalLink } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -52,16 +52,35 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({ isOpen, onClose, po
   });
 
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      position: position
-    }));
-  }, [position]);
+    if (isOpen) {
+      setFormData({
+        title: '',
+        description: '',
+        photoUrl: '',
+        direction: 0,
+        tags: [],
+        position: position,
+      });
+      setCurrentTag('');
+      setPreviewUrl(null);
+      setUploadType('file');
+    }
+  }, [isOpen, position]);
 
   const [currentTag, setCurrentTag] = useState('');
   const [uploadType, setUploadType] = useState<'file' | 'url'>('file');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const getGoogleMapsUrl = () => {
+    const [lat, lng] = position;
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  };
+
+  const copyCoordinates = () => {
+    const [lat, lng] = position;
+    navigator.clipboard.writeText(`${lat}, ${lng}`);
+  };
 
   if (!isOpen) return null;
 
@@ -109,6 +128,36 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({ isOpen, onClose, po
         <h2 className="text-2xl font-bold mb-6">Add Photo Location</h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-5 w-5 text-indigo-600" />
+                <h3 className="font-medium">Location Coordinates</h3>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={copyCoordinates}
+                  className="text-sm text-indigo-600 hover:text-indigo-700"
+                >
+                  Copy
+                </button>
+                <a
+                  href={getGoogleMapsUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-1 text-sm text-indigo-600 hover:text-indigo-700"
+                >
+                  <span>Open in Maps</span>
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+            <div className="font-mono text-sm bg-white p-2 rounded border border-gray-200">
+              {position[0].toFixed(6)}, {position[1].toFixed(6)}
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Title

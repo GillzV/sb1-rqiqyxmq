@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
-import { Camera, Navigation, Trash2 } from 'lucide-react';
+import { Camera, Navigation, Trash2, MapPin, ExternalLink } from 'lucide-react';
 import L from 'leaflet';
 import AddLocationModal from './AddLocationModal';
 import type { LocationData } from './AddLocationModal';
@@ -80,6 +80,16 @@ const MapComponent: React.FC = () => {
     }
   };
 
+  const getGoogleMapsUrl = (position: [number, number]) => {
+    const [lat, lng] = position;
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  };
+
+  const copyCoordinates = (position: [number, number]) => {
+    const [lat, lng] = position;
+    navigator.clipboard.writeText(`${lat}, ${lng}`);
+  };
+
   return (
     <>
       <MapContainer
@@ -120,6 +130,37 @@ const MapComponent: React.FC = () => {
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">{location.description}</p>
+                  
+                  {/* Coordinates section */}
+                  <div className="bg-gray-50 p-3 rounded-lg mb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-indigo-600" />
+                        <span className="text-sm font-medium">Coordinates </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => copyCoordinates(location.position)}
+                          className="text-xs text-indigo-600 hover:text-indigo-700"
+                        >
+                          Copy
+                        </button>
+                        <a
+                          href={getGoogleMapsUrl(location.position)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center space-x-1"
+                        >
+                          <span>Maps</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    </div>
+                    <div className="font-mono text-xs bg-white p-1.5 rounded border border-gray-200">
+                      {location.position[0].toFixed(6)}, {location.position[1].toFixed(6)}
+                    </div>
+                  </div>
+
                   <div className="flex items-center text-sm text-gray-500">
                     <Navigation className="h-4 w-4 mr-1" />
                     <span>{location.direction}°</span>
