@@ -5,11 +5,14 @@ import L from 'leaflet';
 import AddLocationModal from './AddLocationModal';
 import type { LocationData } from './AddLocationModal';
 import { useLocations } from '../contexts/LocationContext';
+import { useSearch } from '../contexts/SearchContext';
 
 // Create a custom icon using Lucide React Camera icon
-const createCustomIcon = () => {
+const createCustomIcon = (isHighlighted: boolean = false) => {
   const iconHtml = document.createElement('div');
-  iconHtml.className = 'bg-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-indigo-50';
+  iconHtml.className = `bg-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-indigo-50 ${
+    isHighlighted ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
+  }`;
   iconHtml.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>`;
 
   return L.divIcon({
@@ -33,19 +36,24 @@ const MapClickHandler: React.FC<MapClickHandlerProps> = ({ onMapClick }) => {
   return null;
 };
 
-// New component to handle map panning
+// New component to handle map panning and search results
 const MapController: React.FC = () => {
   const map = useMap();
   const { selectedLocationId, locations } = useLocations();
+  const { searchQuery, filteredLocations } = useSearch();
 
   useEffect(() => {
-    if (selectedLocationId) {
+    if (searchQuery && filteredLocations.length > 0) {
+      // Center on the first matching location
+      const firstMatch = filteredLocations[0];
+      map.setView(firstMatch.position, 16);
+    } else if (selectedLocationId) {
       const location = locations.find((loc: LocationData) => loc.id === selectedLocationId);
       if (location) {
         map.setView(location.position, 16);
       }
     }
-  }, [selectedLocationId, locations, map]);
+  }, [searchQuery, filteredLocations, selectedLocationId, locations, map]);
 
   return null;
 };
@@ -54,7 +62,7 @@ const MapComponent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<[number, number]>([37.8, -122.4]);
   const { locations, addLocation, deleteLocation } = useLocations();
-  const customIcon = createCustomIcon();
+  const { filteredLocations } = useSearch();
 
   // Debug logging
   useEffect(() => {
@@ -106,12 +114,13 @@ const MapComponent: React.FC = () => {
         <MapController />
         
         {Array.isArray(locations) && locations.map((location: LocationData) => {
+          const isHighlighted = filteredLocations.some(loc => loc.id === location.id);
           console.log('Rendering marker for location:', location);
           return (
             <Marker 
               key={location.id} 
               position={location.position} 
-              icon={customIcon}
+              icon={createCustomIcon(isHighlighted)}
             >
               <Popup>
                 <div className="p-2 min-w-[200px]">
@@ -133,15 +142,15 @@ const MapComponent: React.FC = () => {
                   
                   {/* Coordinates section */}
                   <div className="bg-gray-50 p-3 rounded-lg mb-2">
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <MapPin className="h-4 w-4 text-indigo-600" />
-                        <span className="text-sm font-medium">Coordinates </span>
+                        <span className="text-sm font-medium">Coordinates</span>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-3">
                         <button
                           onClick={() => copyCoordinates(location.position)}
-                          className="text-xs text-indigo-600 hover:text-indigo-700"
+                          className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-2 py-1 rounded"
                         >
                           Copy
                         </button>
@@ -149,21 +158,33 @@ const MapComponent: React.FC = () => {
                           href={getGoogleMapsUrl(location.position)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center space-x-1"
+                          className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-2 py-1 rounded flex items-center space-x-1"
                         >
                           <span>Maps</span>
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
                     </div>
-                    <div className="font-mono text-xs bg-white p-1.5 rounded border border-gray-200">
+                    <div className="font-mono text-xs bg-white p-2 rounded border border-gray-200">
                       {location.position[0].toFixed(6)}, {location.position[1].toFixed(6)}
                     </div>
                   </div>
 
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-gray-500 mb-2">
                     <Navigation className="h-4 w-4 mr-1" />
-                    <span>{location.direction}°</span>
+                    <span>Direction: {location.direction}°</span>
+                  </div>
+                  <div className="relative w-full h-16 bg-gray-100 rounded-lg mb-2 flex items-center justify-center">
+                    {/* Direction indicator */}
+                    <div 
+                      className="absolute w-0 h-0"
+                      style={{ 
+                        transform: `rotate(${location.direction + 270}deg)`,
+                        transformOrigin: 'center center'
+                      }}
+                    >
+                      <div className="absolute w-0 h-0 border-t-[4px] border-t-transparent border-l-[16px] border-l-indigo-600 border-b-[4px] border-b-transparent left-1/2 -translate-x-1/2" />
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
                     {location.tags.map((tag: string, i: number) => (

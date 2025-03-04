@@ -21,13 +21,12 @@ export interface LocationData {
   position: [number, number];
 }
 
-const DirectionMarker = ({ direction }: { direction: number }) => {
+const DirectionMarker = ({ direction, position }: { direction: number; position: [number, number] }) => {
   const map = useMap();
-  const center = map.getCenter();
   
   const markerHtml = `
-    <div class="direction-marker" style="transform: rotate(${direction}deg)">
-      <div class="arrow"></div>
+    <div class="direction-marker" style="transform: rotate(${direction + 270}deg)">
+      <div class="absolute w-0 h-0 border-t-[4px] border-t-transparent border-l-[16px] border-l-indigo-600 border-b-[4px] border-b-transparent left-1/2 -translate-x-1/2"></div>
     </div>
   `;
 
@@ -38,7 +37,7 @@ const DirectionMarker = ({ direction }: { direction: number }) => {
     iconAnchor: [20, 20]
   });
 
-  return <Marker position={[center.lat, center.lng]} icon={icon} />;
+  return <Marker position={position} icon={icon} />;
 };
 
 const AddLocationModal: React.FC<AddLocationModalProps> = ({ isOpen, onClose, position, onSave }) => {
@@ -290,7 +289,7 @@ const AddLocationModal: React.FC<AddLocationModalProps> = ({ isOpen, onClose, po
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-                  <DirectionMarker direction={formData.direction} />
+                  <DirectionMarker direction={formData.direction} position={position} />
                 </MapContainer>
               </div>
             </div>
